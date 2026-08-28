@@ -1,0 +1,49 @@
+#shell Provisioning
+
+Vagrant.configure("2") do |config| 
+  if Vagrant.has_plugin?("vagrant-vbguest") 
+    config.vbguest.auto_update = false 
+  end 
+
+  # --- VM 1: Web Server ---
+  config.vm.define "vm1" do |vm1| 
+    vm1.vm.box = "ubuntu/focal64" 
+    vm1.vm.hostname = 'WEB' 
+    vm1.vm.network :private_network, ip: "192.168.56.101", auto_correct: true 
+    vm1.vm.network :forwarded_port, guest: 22, host: 2201, id: "ssh", auto_correct: true 
+    
+    vm1.vm.provision "shell", inline: <<-SHELL
+      echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
+      apt-get update 
+      apt-get install apache2 -y 
+    SHELL
+  end 
+
+  # --- VM 2: Load Balancer ---
+  config.vm.define "vm2" do |vm2| 
+    vm2.vm.box = "ubuntu/focal64" 
+    vm2.vm.hostname = 'LB' 
+    vm2.vm.network :private_network, ip: "192.168.56.102", auto_correct: true 
+    vm2.vm.network :forwarded_port, guest: 22, host: 2202, id: "ssh", auto_correct: true 
+    
+    vm2.vm.provision "shell", inline: <<-SHELL
+      echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
+      apt-get update 
+      apt-get install haproxy -y 
+    SHELL
+  end 
+
+  # --- VM 3: Database Server ---
+  config.vm.define "vm3" do |vm3| 
+    vm3.vm.box = "ubuntu/focal64" 
+    vm3.vm.hostname = 'DB' 
+    vm3.vm.network :private_network, ip: "192.168.56.103", auto_correct: true 
+    vm3.vm.network :forwarded_port, guest: 22, host: 2203, id: "ssh", auto_correct: true 
+    
+    vm3.vm.provision "shell", inline: <<-SHELL
+      echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
+      apt-get update 
+      apt-get install mysql-server -y 
+    SHELL
+  end 
+end
