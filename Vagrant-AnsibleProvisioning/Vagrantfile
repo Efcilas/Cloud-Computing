@@ -1,0 +1,40 @@
+# Ansible Provisioning 
+Vagrant.configure("2") do |config| 
+  if Vagrant.has_plugin?("vagrant-vbguest") 
+    config.vbguest.auto_update = false 
+end 
+# Menambah batas waktu boot menjadi 600 detik (10 menit) untuk semua VM
+  config.vm.boot_timeout = 600
+
+# Menambahkan VirtualBox provider di sini
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = true
+  end
+
+(1..2).each do |i| 
+  config.vm.define "vm#{i}" do |node| 
+    node.vm.box = "ubuntu/focal64" 
+    node.vm.hostname = "Web#{i}" 
+    node.vm.network "private_network", ip: 
+    "192.168.56.10#{i}" 
+    node.vm.network "forwarded_port", guest: 80, host: 
+    "809#{i}" 
+    node.vm.provision "ansible_local" do |ansible| 
+      ansible.verbose = "v" 
+      ansible.playbook = "web.yml" 
+    end 
+  end 
+end 
+  config.vm.define "vm3" do |vm3| 
+    vm3.vm.box = "ubuntu/focal64" 
+    vm3.vm.hostname = 'LB' 
+    vm3.vm.network :private_network, ip: "192.168.56.103", 
+    auto_correct: true 
+    vm3.vm.network :forwarded_port, guest: 80, host: 8093,  
+    id: "lb", auto_correct: true 
+    vm3.vm.provision "ansible_local" do |ansible| 
+      ansible.verbose = "v" 
+      ansible.playbook = "lb.yml" 
+    end  
+  end 
+end
